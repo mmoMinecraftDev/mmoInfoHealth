@@ -1,0 +1,12 @@
+name: mmoInfoHealth
+version: ${releaseVersion}.${buildNumber}
+description: Adds a {health} token to the mmoInfo token list.
+author: mmoMinecraftDev
+website: http://mmo.me.uk
+main: mmo.Info.mmoInfoHealth
+depend: [Spout,mmoCore,mmoInfo]
+description: Adds {health} to the info tokens
+permissions:
+  mmo.info.health:
+    description: Allows {health} to show the current players health.
+    default: true
