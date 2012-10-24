@@ -31,6 +31,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityRegainHealthEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.plugin.PluginManager;
 import org.getspout.spoutapi.gui.Color;
@@ -93,17 +94,18 @@ public class mmoInfoHealth extends MMOPlugin implements Listener {
 
 	@EventHandler(priority = EventPriority.MONITOR)
 	public void onEntityDamage(EntityDamageEvent event) {			
-		if(event.isCancelled()) {
-			return;
-		}
-		Entity entity = event.getEntity();
-
-		if(!(entity instanceof Player)) {
-			return;
-		}		
-		forceUpdate = true;
+		if(!event.isCancelled() && event.getEntity() instanceof Player) {
+			forceUpdate = true;
+		}				
 	}
 
+	@EventHandler(priority = EventPriority.MONITOR)
+	public void onEntityRegainHealth(EntityRegainHealthEvent event) {			
+		if(!event.isCancelled() && event.getEntity() instanceof Player) {
+			forceUpdate = true;
+		}				
+	}
+	
 	public class CustomLabel extends GenericLabel {
 		private transient int tick = 0;
 
@@ -140,7 +142,7 @@ public class mmoInfoHealth extends MMOPlugin implements Listener {
 				} else {
 					slider.setColor(redBar);  		
 				}
-				setWidth(playerHealth);
+				slider.setWidth(playerHealth);
 				forceUpdate = false;
 			}
 		}	
