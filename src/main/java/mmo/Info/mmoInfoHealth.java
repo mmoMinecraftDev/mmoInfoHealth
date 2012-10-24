@@ -31,8 +31,6 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.entity.EntityRegainHealthEvent;
-import org.bukkit.event.entity.FoodLevelChangeEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.plugin.PluginManager;
 import org.getspout.spoutapi.gui.Color;
@@ -50,9 +48,10 @@ import org.getspout.spoutapi.player.SpoutPlayer;
 
 public class mmoInfoHealth extends MMOPlugin implements Listener {
 	private static final HashMap<Player, CustomLabel> widgets = new HashMap();
-	private static final Map<Player, HealthWidget> healthbar = new HashMap<Player, HealthWidget>();
+	private static final Map<Player, CustomWidget> healthbar = new HashMap<Player, CustomWidget>();
 	private static String config_displayas = "bar";
-	
+	private boolean forceUpdate = true;
+
 	public EnumBitSet mmoSupport(EnumBitSet support)
 	{		
 		support.set(MMOPlugin.Support.MMO_AUTO_EXTRACT);
@@ -62,23 +61,21 @@ public class mmoInfoHealth extends MMOPlugin implements Listener {
 	public void onEnable() {
 		super.onEnable();
 		this.pm.registerEvents(this, this);
-		this.pm.registerEvents(new HealthWidget(), this);
 	}	
 
 	@Override
 	public void loadConfiguration(final FileConfiguration cfg) {
-	    config_displayas = cfg.getString("displayas", config_displayas);		
+		config_displayas = cfg.getString("displayas", config_displayas);		
 	}
-	
-    @EventHandler
+
+	@EventHandler
 	public void onMMOInfo(MMOInfoEvent event)
 	{
 		if (event.isToken("health")) {
 			SpoutPlayer player = event.getPlayer();
 			if (player.hasPermission("mmo.info.health")) {
 				if (config_displayas.equalsIgnoreCase("bar")) {				
-					//final CustomWidget widget = new CustomWidget();
-					final HealthWidget widget = new HealthWidget();
+					final CustomWidget widget = new CustomWidget();
 					healthbar.put(player, widget);
 					event.setWidget(plugin, widget);
 				} else { 
@@ -91,54 +88,63 @@ public class mmoInfoHealth extends MMOPlugin implements Listener {
 		}
 	}
 
+	@EventHandler(priority = EventPriority.MONITOR)
+	public void onEntityDamage(EntityDamageEvent event) {			
+		if(event.isCancelled()) {
+			return;
+		}
+		Entity entity = event.getEntity();
+
+		if(!(entity instanceof Player)) {
+			return;
+		}
+		SpoutPlayer sPlayer = (SpoutPlayer) event.getEntity();
+		forceUpdate = true;
+	}
+
 	public class CustomLabel extends GenericLabel {
 		private transient int tick = 0;
-		
+
 		@Override
 		public void onTick()
 		{		
-			setText(String.format(getScreen().getPlayer().getHealth() + "/" + getScreen().getPlayer().getMaxHealth()));
+			if (forceUpdate) {
+				setText(String.format(getScreen().getPlayer().getHealth() + "/" + getScreen().getPlayer().getMaxHealth()));
+				forceUpdate = false;
+			}
 		}
 	}
-		
-	/*public class CustomWidget extends GenericContainer implements Listener {
-			
+
+	public class CustomWidget extends GenericContainer {
+
 		private final Gradient slider = new GenericGradient();
 		private final Texture bar = new GenericTexture();
-		
+
 		public CustomWidget() {
 			super();
 			slider.setMargin(1).setPriority(RenderPriority.Normal).setHeight(5).setWidth(20).shiftXPos(1).shiftYPos(1);
 			bar.setUrl("bar10.png").setPriority(RenderPriority.Lowest).setHeight(7).setWidth(103).shiftYPos(0);			
 			this.setLayout(ContainerType.OVERLAY).setMinWidth(100).setMaxWidth(100);
 			this.addChildren(slider, bar);
-			//updateHealth();
 		}
-					
-		@EventHandler(priority = EventPriority.MONITOR)
-		public void onEntityDamage(EntityDamageEvent event) {
-			System.out.println("EntityDamage Event Ticked");
-			if(event.isCancelled()) {
-				return;
+
+		public void onTick() {			
+			if (forceUpdate) {
+				System.out.println("Force Update");
+				final int playerHealth = (int) (getScreen().getPlayer().getHealth()*5);			
+				if (playerHealth<=66 && playerHealth>=33) {				 
+					slider.setColor(new Color(0.8039f,0.6784f,0f,1f)).setWidth(playerHealth);  //Orange
+				} else if (playerHealth>66) {			
+					slider.setColor(new Color(0,1f,0,1f)).setWidth(playerHealth); //Green				
+				} else if (playerHealth<33) {
+					slider.setColor(new Color(0.69f,0.09f,0.12f,1f)).setWidth(playerHealth);  //Red				
+				}
+				forceUpdate = false;
 			}
-			Entity entity = event.getEntity();
-			
-			if(!(entity instanceof Player)) {
-				return;
-			}
-			updateHealth();
 		}
-		
+
 		public void updateHealth() {
-			System.out.println("Updating Player Health");
-			final int playerHealth = (int) (getScreen().getPlayer().getHealth()*5);			
-			if (playerHealth<=66 && playerHealth>=33) {				 
-				slider.setColor(new Color(0.8039f,0.6784f,0f,1f)).setWidth(playerHealth);  //Orange
-			} else if (playerHealth>66) {			
-				slider.setColor(new Color(0,1f,0,1f)).setWidth(playerHealth); //Green				
-			} else if (playerHealth<33) {
-				slider.setColor(new Color(0.69f,0.09f,0.12f,1f)).setWidth(playerHealth);  //Red				
-			}			
+
 		}
-	} */
+	}
 }
