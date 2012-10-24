@@ -50,8 +50,11 @@ public class mmoInfoHealth extends MMOPlugin implements Listener {
 	private static final HashMap<Player, CustomLabel> widgets = new HashMap();
 	private static final Map<Player, CustomWidget> healthbar = new HashMap<Player, CustomWidget>();
 	private static String config_displayas = "bar";
-	private boolean forceUpdate = true;
-
+	private boolean forceUpdate = true;					 
+	private static final Color orangeBar = new Color(0.8039f,0.6784f,0f,1f); 
+	private static final Color greenBar = new Color(0,1f,0,1f);  
+	private static final Color redBar = new Color(0.69f,0.09f,0.12f,1f); 
+	
 	public EnumBitSet mmoSupport(EnumBitSet support)
 	{		
 		support.set(MMOPlugin.Support.MMO_AUTO_EXTRACT);
@@ -123,20 +126,19 @@ public class mmoInfoHealth extends MMOPlugin implements Listener {
 			super();
 			slider.setMargin(1).setPriority(RenderPriority.Normal).setHeight(5).setWidth(20).shiftXPos(1).shiftYPos(1);
 			bar.setUrl("bar10.png").setPriority(RenderPriority.Lowest).setHeight(7).setWidth(103).shiftYPos(0);			
-			this.setLayout(ContainerType.OVERLAY).setMinWidth(100).setMaxWidth(100);
 			this.addChildren(slider, bar);
 		}
 
 		@Override
 		public void onTick() {			
-			if (forceUpdate) {				
-				final int playerHealth = (int) (getScreen().getPlayer().getHealth()*5);			
-				if (playerHealth<=66 && playerHealth>=33) {				 
-					slider.setColor(new Color(0.8039f,0.6784f,0f,1f)).setWidth(playerHealth);  //Orange
-				} else if (playerHealth>66) {			
-					slider.setColor(new Color(0,1f,0,1f)).setWidth(playerHealth); //Green				
-				} else if (playerHealth<33) {
-					slider.setColor(new Color(0.69f,0.09f,0.12f,1f)).setWidth(playerHealth);  //Red				
+			if (forceUpdate) {
+				final int playerHealth = Math.max(0, Math.min( 100, (int) (getScreen().getPlayer().getHealth()*5)));				
+				if (playerHealth>66) {				 
+					slider.setColor(greenBar).setWidth(playerHealth);
+				} else if (playerHealth<=66 && playerHealth>=33) {			
+					slider.setColor(orangeBar).setWidth(playerHealth);				
+				} else {
+					slider.setColor(redBar).setWidth(playerHealth);  		
 				}
 				forceUpdate = false;
 			}
