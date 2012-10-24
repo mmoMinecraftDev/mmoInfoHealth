@@ -97,8 +97,7 @@ public class mmoInfoHealth extends MMOPlugin implements Listener {
 
 		if(!(entity instanceof Player)) {
 			return;
-		}
-		SpoutPlayer sPlayer = (SpoutPlayer) event.getEntity();
+		}		
 		forceUpdate = true;
 	}
 
@@ -128,6 +127,7 @@ public class mmoInfoHealth extends MMOPlugin implements Listener {
 			this.addChildren(slider, bar);
 		}
 
+		@Override
 		public void onTick() {			
 			if (forceUpdate) {
 				System.out.println("Force Update");
@@ -141,10 +141,6 @@ public class mmoInfoHealth extends MMOPlugin implements Listener {
 				}
 				forceUpdate = false;
 			}
-		}
-
-		public void updateHealth() {
-
-		}
+		}	
 	}
 }
