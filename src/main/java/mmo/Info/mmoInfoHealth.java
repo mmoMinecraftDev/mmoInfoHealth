@@ -18,6 +18,7 @@ package mmo.Info;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import mmo.Core.InfoAPI.MMOInfoEvent;
 import mmo.Core.MMOPlugin;
@@ -49,106 +50,108 @@ import org.getspout.spoutapi.gui.Widget;
 import org.getspout.spoutapi.player.SpoutPlayer;
 
 public class mmoInfoHealth extends MMOPlugin implements Listener {
-	private static final Map<Player, Widget> healthbar = new HashMap<Player, Widget>();
-	private static String config_displayas = "bar";
-	private boolean forceUpdate = true;					 
-	private static final Color greenBar = new Color(0,1f,0,1f);  
-	private static final Color orangeBar = new Color(0.8039f,0.6784f,0f,1f); 
-	private static final Color redBar = new Color(0.69f,0.09f,0.12f,1f); 
-	
-	public EnumBitSet mmoSupport(EnumBitSet support)
-	{		
-		support.set(MMOPlugin.Support.MMO_AUTO_EXTRACT);
-		return support;
-	}
+  private static final Map<Player, Widget> healthbar = new HashMap<Player, Widget>();
+  private static String config_displayas = "bar";
+  private static final Color greenBar = new Color(0,1f,0,1f);
+  private static final Color orangeBar = new Color(0.8039f,0.6784f,0f,1f);
+  private static final Color redBar = new Color(0.69f,0.09f,0.12f,1f);
+  private static final Map<UUID, Boolean> updateStatuses = new HashMap<UUID, Boolean>();
 
-	public void onEnable() {
-		super.onEnable();
-		this.pm.registerEvents(this, this);
-	}	
+  public EnumBitSet mmoSupport(EnumBitSet support)
+  {
+    support.set(MMOPlugin.Support.MMO_AUTO_EXTRACT);
+    return support;
+  }
 
-	@Override
-	public void loadConfiguration(final FileConfiguration cfg) {
-		config_displayas = cfg.getString("displayas", config_displayas);		
-	}
+  public void onEnable() {
+    super.onEnable();
+    this.pm.registerEvents(this, this);
+  }
 
-	@EventHandler
-	public void onMMOInfo(MMOInfoEvent event)
-	{
-		if (event.isToken("health")) {
-			SpoutPlayer player = event.getPlayer();
-			if (player.hasPermission("mmo.info.health")) {
-				if (config_displayas.equalsIgnoreCase("bar")) {				
-					final CustomWidget widget = new CustomWidget();
-					healthbar.put(player, widget);
-					event.setWidget(plugin, widget);
-					forceUpdate = true;
-				} else { 
-					final CustomLabel label = (CustomLabel)new CustomLabel().setResize(true).setFixed(true);
-					label.setText("20/20");
-					forceUpdate = true;
-					healthbar.put(player, label);				
-					event.setWidget(this.plugin, label);
-				}				
-				event.setIcon("health.png");				
-			}
-		}
-	}
+  @Override
+  public void loadConfiguration(final FileConfiguration cfg) {
+    config_displayas = cfg.getString("displayas", config_displayas);
+  }
 
-	@EventHandler(priority = EventPriority.MONITOR)
-	public void onEntityDamage(EntityDamageEvent event) {			
-		if(!event.isCancelled() && event.getEntity() instanceof Player) {
-			forceUpdate = true;
-		}				
-	}
+  @EventHandler
+  public void onMMOInfo(MMOInfoEvent event)
+  {
+    if (event.isToken("health")) {
+      final SpoutPlayer player = event.getPlayer();
+      if (player.hasPermission("mmo.info.health")) {
+        if (config_displayas.equalsIgnoreCase("bar")) {
+          final CustomWidget widget = new CustomWidget();
+          healthbar.put(player, widget);
+          event.setWidget(plugin, widget);
+          updateStatuses.put(player.getUniqueId(), true);
+        } else {
+          final CustomLabel label = (CustomLabel)new CustomLabel().setResize(true).setFixed(true);
+          label.setText("20/20");
+          updateStatuses.put(player.getUniqueId(), true);
+          healthbar.put(player, label);
+          event.setWidget(this.plugin, label);
+        }
+        event.setIcon("health.png");
+      }
+    }
+  }
 
-	@EventHandler(priority = EventPriority.MONITOR)
-	public void onEntityRegainHealth(EntityRegainHealthEvent event) {			
-		if(!event.isCancelled() && event.getEntity() instanceof Player) {
-			forceUpdate = true;
-		}				
-	}
-	
-	public class CustomLabel extends GenericLabel {
-		private transient int tick = 0;
+  @EventHandler(priority = EventPriority.MONITOR)
+  public void onEntityDamage(EntityDamageEvent event) {
+    if(!event.isCancelled() && event.getEntity() instanceof Player) {
+      updateStatuses.put(event.getEntity().getUniqueId(), true);
+    }
+  }
 
-		@Override
-		public void onTick()
-		{		
-			if (forceUpdate) {
-				setText(String.format(getScreen().getPlayer().getHealth() + "/" + getScreen().getPlayer().getMaxHealth()));
-				forceUpdate = false;
-			}
-		}
-	}
+  @EventHandler(priority = EventPriority.MONITOR)
+  public void onEntityRegainHealth(EntityRegainHealthEvent event) {
+    if(!event.isCancelled() && event.getEntity() instanceof Player) {
+      updateStatuses.put(event.getEntity().getUniqueId(), true);
+    }
+  }
 
-	public class CustomWidget extends GenericContainer {
+  public class CustomLabel extends GenericLabel {
+    private transient int tick = 0;
 
-		private final Gradient slider = new GenericGradient();
-		private final Texture bar = new GenericTexture();
+    @Override
+    public void onTick()
+    {
+      final boolean update = updateStatuses.containsKey(getScreen().getPlayer().getUniqueId()) ? updateStatuses.get(getScreen().getPlayer().getUniqueId()) : false;
+      if (update) {
+        setText(String.format(getScreen().getPlayer().getHealth() + "/" + getScreen().getPlayer().getMaxHealth()));
+        updateStatuses.put(getScreen().getPlayer().getUniqueId(), false);
+      }
+    }
+  }
 
-		public CustomWidget() {
-			super();
-			slider.setMargin(1).setPriority(RenderPriority.Normal).setHeight(5).setWidth(100).shiftXPos(1).shiftYPos(1);
-			bar.setUrl("bar10.png").setPriority(RenderPriority.Lowest).setHeight(7).setWidth(103).shiftYPos(0);			
-			this.setLayout(ContainerType.OVERLAY).setMinWidth(103).setMaxWidth(103).setWidth(103);			
-			this.addChildren(slider, bar);
-		}
+  public class CustomWidget extends GenericContainer {
 
-		@Override
-		public void onTick() {			
-			if (forceUpdate) {
-				final int playerHealth = Math.max(0, Math.min( 100, (int) (getScreen().getPlayer().getHealth()*5)));				
-				if (playerHealth>66) {				 
-					slider.setColor(greenBar);
-				} else if (playerHealth>=33) {			
-					slider.setColor(orangeBar);				
-				} else {
-					slider.setColor(redBar);  		
-				}
-				slider.setWidth(playerHealth);
-				forceUpdate = false;
-			}
-		}	
-	}
+    private final Gradient slider = new GenericGradient();
+    private final Texture bar = new GenericTexture();
+
+    public CustomWidget() {
+      super();
+      slider.setMargin(1).setPriority(RenderPriority.Normal).setHeight(5).setWidth(100).shiftXPos(1).shiftYPos(1);
+      bar.setUrl("bar10.png").setPriority(RenderPriority.Lowest).setHeight(7).setWidth(103).shiftYPos(0);
+      this.setLayout(ContainerType.OVERLAY).setMinWidth(103).setMaxWidth(103).setWidth(103);
+      this.addChildren(slider, bar);
+    }
+
+    @Override
+    public void onTick() {
+      final boolean update = updateStatuses.containsKey(getScreen().getPlayer().getUniqueId()) ? updateStatuses.get(getScreen().getPlayer().getUniqueId()) : false;
+      if (update) {
+        final int playerHealth = Math.max(0, Math.min( 100, (int) (getScreen().getPlayer().getHealth()*5)));
+        if (playerHealth>66) {
+          slider.setColor(greenBar);
+        } else if (playerHealth>=33) {
+          slider.setColor(orangeBar);
+        } else {
+          slider.setColor(redBar);
+        }
+        slider.setWidth(playerHealth);
+        updateStatuses.put(getScreen().getPlayer().getUniqueId(), false);
+      }
+    }
+  }
 }
