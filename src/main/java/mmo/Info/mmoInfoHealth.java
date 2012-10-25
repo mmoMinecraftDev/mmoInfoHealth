@@ -45,11 +45,11 @@ import org.getspout.spoutapi.gui.Label;
 import org.getspout.spoutapi.gui.RenderPriority;
 import org.getspout.spoutapi.gui.Screen;
 import org.getspout.spoutapi.gui.Texture;
+import org.getspout.spoutapi.gui.Widget;
 import org.getspout.spoutapi.player.SpoutPlayer;
 
 public class mmoInfoHealth extends MMOPlugin implements Listener {
-	private static final HashMap<Player, CustomLabel> widgets = new HashMap();
-	private static final Map<Player, CustomWidget> healthbar = new HashMap<Player, CustomWidget>();
+	private static final Map<Player, Widget> healthbar = new HashMap<Player, Widget>();
 	private static String config_displayas = "bar";
 	private boolean forceUpdate = true;					 
 	private static final Color greenBar = new Color(0,1f,0,1f);  
@@ -82,9 +82,12 @@ public class mmoInfoHealth extends MMOPlugin implements Listener {
 					final CustomWidget widget = new CustomWidget();
 					healthbar.put(player, widget);
 					event.setWidget(plugin, widget);
+					forceUpdate = true;
 				} else { 
 					final CustomLabel label = (CustomLabel)new CustomLabel().setResize(true).setFixed(true);
-					this.widgets.put(player, label);				
+					label.setText("20/20");
+					forceUpdate = true;
+					healthbar.put(player, label);				
 					event.setWidget(this.plugin, label);
 				}				
 				event.setIcon("health.png");				
@@ -126,8 +129,9 @@ public class mmoInfoHealth extends MMOPlugin implements Listener {
 
 		public CustomWidget() {
 			super();
-			slider.setMargin(1).setPriority(RenderPriority.Normal).setHeight(5).setWidth(20).shiftXPos(1).shiftYPos(1);
+			slider.setMargin(1).setPriority(RenderPriority.Normal).setHeight(5).setWidth(100).shiftXPos(1).shiftYPos(1);
 			bar.setUrl("bar10.png").setPriority(RenderPriority.Lowest).setHeight(7).setWidth(103).shiftYPos(0);			
+			this.setLayout(ContainerType.OVERLAY).setMinWidth(103).setMaxWidth(103).setWidth(103);			
 			this.addChildren(slider, bar);
 		}
 
