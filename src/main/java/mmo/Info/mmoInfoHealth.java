@@ -34,6 +34,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityRegainHealthEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.plugin.PluginManager;
 import org.getspout.spoutapi.gui.Color;
 import org.getspout.spoutapi.gui.ContainerType;
@@ -108,6 +109,11 @@ public class mmoInfoHealth extends MMOPlugin implements Listener {
     if(!event.isCancelled() && event.getEntity() instanceof Player) {
       updateStatuses.put(event.getEntity().getUniqueId(), true);
     }
+  }
+  
+  @EventHandler(priority = EventPriority.MONITOR)
+  public void onPlayerRespawn(PlayerRespawnEvent event) {    
+      updateStatuses.put(event.getPlayer().getUniqueId(), true);    
   }
 
   public class CustomLabel extends GenericLabel {
