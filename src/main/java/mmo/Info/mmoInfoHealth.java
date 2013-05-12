@@ -147,8 +147,8 @@ public class mmoInfoHealth extends MMOPlugin implements Listener {
     public void onTick() {
       final boolean update = updateStatuses.containsKey(getScreen().getPlayer().getUniqueId()) ? updateStatuses.get(getScreen().getPlayer().getUniqueId()) : false;
       if (update) {
-        final int playerHealth = Math.max(0, Math.min( 100, (int) (getScreen().getPlayer().getHealth()*5)));
-        if (playerHealth>66) {
+		final int playerHealth = (int)(((float)getScreen().getPlayer().getHealth()  / getScreen().getPlayer().getMaxHealth()) * 100);
+		if (playerHealth>66) {
           slider.setColor(greenBar);
         } else if (playerHealth>=33) {
           slider.setColor(orangeBar);
